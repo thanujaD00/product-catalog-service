@@ -37,6 +37,19 @@ jobs:
       run: |
         docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
         
+    - name: Check for existing service
+      id: check-service
+      run: |
+        set +e
+        gcloud run services describe ${{ env.SERVICE_NAME }} --region ${{ env.REGION }} --format="none"
+        if [ $? -eq 0 ]; then
+          echo "Service exists, updating..."
+          echo "service_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "Service doesn't exist, creating new service..."
+          echo "service_exists=false" >> $GITHUB_OUTPUT
+        fi
+        
     - name: Deploy to Cloud Run
       id: deploy
       uses: google-github-actions/deploy-cloudrun@v1
